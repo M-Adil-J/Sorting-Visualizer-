@@ -1,12 +1,12 @@
 Project Overview
  
 This project is a Java-based GUI application that visualizes the sorting process for different algorithms. It supports two modes:  
-1. Single Algorithm Mode**: Visualizes one algorithm sorting an array.  
+1. Single Algorithm Mode: Visualizes one algorithm sorting an array.  
 2. Race Mode: Visualizes multiple algorithms sorting the same array side-by-side, simulating a "race."  
 
 Features  
-- Algorithms Supported**: Bubble Sort, Insertion Sort, Selection Sort, Merge Sort, Quick Sort.  
-- Array Options**:  
+- Algorithms Supported: Bubble Sort, Insertion Sort, Selection Sort, Merge Sort, Quick Sort.  
+- Array Options:  
   - User-defined array.  
   - Randomly generated array with customizable size.  
 - Leaderboard (Race Mode): Displays sorting times for each algorithm in order of completion.  
