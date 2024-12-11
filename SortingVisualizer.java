@@ -21,14 +21,14 @@ public class SortingVisualizer extends JPanel {
             sort();
             sortDuration = System.nanoTime() - startTime;
 
-            // Show sorting time in Single Algorithm mode
+    
             if (!isRaceMode) {
                 SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(frame, "Sorting took: " + (sortDuration / 1_000_000) + " ms", "Sorting Complete", JOptionPane.INFORMATION_MESSAGE);
-                    frame.dispose(); // Close the frame after sorting
+                    frame.dispose();
                 });
             } else {
-                repaint(); // For race mode, just repaint after sorting
+                repaint();
             }
         }).start();
     }
@@ -180,7 +180,7 @@ public class SortingVisualizer extends JPanel {
 
     private void sleep() {
         try {
-            Thread.sleep(200);
+            Thread.sleep(150);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -189,104 +189,176 @@ public class SortingVisualizer extends JPanel {
     @Override
 protected void paintComponent(Graphics g) {
     super.paintComponent(g);
+
     
-    int barWidth = getWidth() / array.length;
-    int maxHeight = getHeight();
-    int maxValue = Arrays.stream(array).max().orElse(1); // Maximum value in the array
+    g.setColor(Color.WHITE);
+    g.setFont(new Font("SansSerif", Font.BOLD, 16)); 
+    FontMetrics titleMetrics = g.getFontMetrics();
+    String title = "Algorithm: " + algorithm;
+    int titleWidth = titleMetrics.stringWidth(title);
+    g.drawString(title, (getWidth() - titleWidth) / 2, 20); 
+
+    int barWidth = getWidth() / array.length; 
+    int maxHeight = getHeight(); 
+    int maxValue = Arrays.stream(array).max().orElse(1); 
+
     
+    int fontSize = Math.max(10, barWidth / 3);
+    g.setFont(new Font("SansSerif", Font.BOLD, fontSize));
+    FontMetrics metrics = g.getFontMetrics();
+
     for (int i = 0; i < array.length; i++) {
-        // Calculate bar height proportional to the max value
         int barHeight = (int) (((double) array[i] / maxValue) * (maxHeight * 0.8)) + 10;
+
         
-        // Set colors
         if (i == currentIndex) {
-            g.setColor(Color.WHITE); // Current item being compared
+            g.setColor(Color.DARK_GRAY);
         } else {
-            g.setColor(Color.PINK); // Default bar color
+            g.setColor(Color.GRAY);
         }
+
         
-        // Draw the bar
         g.fillRect(i * barWidth, maxHeight - barHeight, barWidth, barHeight);
+
+        
+        g.setColor(Color.BLACK);
+        g.drawRect(i * barWidth, maxHeight - barHeight, barWidth, barHeight);
+
+        
+        if (barWidth < 20) continue;
+
+        
+        g.setColor(Color.BLACK);
+
+        
+        String number = String.valueOf(array[i]);
+        int textWidth = metrics.stringWidth(number);
+        int textHeight = metrics.getHeight();
+
+        int textX = i * barWidth + (barWidth - textWidth) / 2;
+        int textY = maxHeight - barHeight + (barHeight + textHeight) / 2;
+
+        
+        g.drawString(number, textX, textY);
     }
 }
 
+public static void main(String[] args) {
+    runProgram();
+}
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Sorting Visualizer");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(1200, 600);
+private static void runProgram() {
+    SwingUtilities.invokeLater(() -> {
+        JFrame frame = new JFrame("Sorting Visualizer");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(1200, 600);
 
-            // Ask user if they want to input their own array or generate it randomly
-            String[] options = {"Input Your Own Array", "Generate Random Array"};
-            int option = JOptionPane.showOptionDialog(frame, "Would you like to input your own array or generate a random one?",
-                    "Array Input Option", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+        String[] options = {"Input Your Own Array", "Generate Random Array"};
+        int option = JOptionPane.showOptionDialog(frame, "Would you like to input your own array or generate a random one?",
+                "Array Input Option", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 
-            int[] array;
-            if (option == 0) {  // User wants to input their own array
-                String input = JOptionPane.showInputDialog(frame, "Enter your array (comma separated values):");
-                array = Arrays.stream(input.split(","))
-                        .mapToInt(Integer::parseInt)
-                        .toArray();
-            } else {  // Generate random array
-                String sizeInput = JOptionPane.showInputDialog(frame, "Enter Array Size:", "50");
-                int arraySize = Integer.parseInt(sizeInput);
-                array = generateRandomArray(arraySize);
-            }
+        int[] array;
+        if (option == 0) {
+            String input = JOptionPane.showInputDialog(frame, "Enter your array (comma separated values):");
+            array = Arrays.stream(input.split(","))
+                    .mapToInt(Integer::parseInt)
+                    .toArray();
+        } else {
+            String sizeInput = JOptionPane.showInputDialog(frame, "Enter Array Size:", "50");
+            int arraySize = Integer.parseInt(sizeInput);
+            array = generateRandomArray(arraySize);
+        }
 
-            String[] modes = {"Single Algorithm", "Race Mode"};
-            String selectedMode = (String) JOptionPane.showInputDialog(frame, "Choose Mode:", "Mode Selection", JOptionPane.QUESTION_MESSAGE, null, modes, modes[0]);
+        String[] modes = {"Single Algorithm", "Race Mode"};
+        String selectedMode = (String) JOptionPane.showInputDialog(frame, "Choose Mode:", "Mode Selection", JOptionPane.QUESTION_MESSAGE, null, modes, modes[0]);
 
-            if ("Single Algorithm".equals(selectedMode)) {
-                String[] algorithms = {"Bubble Sort", "Insertion Sort", "Selection Sort", "Merge Sort", "Quick Sort"};
-                String algorithm = (String) JOptionPane.showInputDialog(frame, "Choose an Algorithm:", "Algorithm Selection", JOptionPane.QUESTION_MESSAGE, null, algorithms, algorithms[0]);
-                SortingVisualizer panel = new SortingVisualizer(algorithm, array);
-                frame.add(panel);
-                panel.startSorting(frame, false);  // Pass false for single algorithm mode
-            } else if ("Race Mode".equals(selectedMode)) {
-                frame.setLayout(new GridLayout(1, 5));
-                String[] algorithms = {"Bubble Sort", "Insertion Sort", "Selection Sort", "Merge Sort", "Quick Sort"};
-                List<SortingVisualizer> panels = new ArrayList<>();
-                for (String algo : algorithms) {
-                    SortingVisualizer panel = new SortingVisualizer(algo, array.clone());
-                    panels.add(panel);
-                    frame.add(panel);
-                    panel.startSorting(frame, true);  // Pass true for race mode
+        if ("Single Algorithm".equals(selectedMode)) {
+            String[] algorithms = {"Bubble Sort", "Insertion Sort", "Selection Sort", "Merge Sort", "Quick Sort"};
+            String algorithm = (String) JOptionPane.showInputDialog(frame, "Choose an Algorithm:", "Algorithm Selection", JOptionPane.QUESTION_MESSAGE, null, algorithms, algorithms[0]);
+            SortingVisualizer panel = new SortingVisualizer(algorithm, array);
+            frame.add(panel);
+        
+            
+            new Thread(() -> {
+                panel.startSorting(frame, false);
+        
+                
+                while (panel.getSortDuration() == 0) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
-
-                new Thread(() -> {
-                    // Wait for all algorithms to finish sorting
-                    for (SortingVisualizer panel : panels) {
-                        while (panel.getSortDuration() == 0) {
-                            try {
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                            }
+        
+                
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(frame, "Sorting took: " + (panel.getSortDuration() / 1_000_000) + " ms", "Sorting Complete", JOptionPane.INFORMATION_MESSAGE);
+        
+                    
+                    askToRestart(frame);
+                });
+            }).start();
+        } else if ("Race Mode".equals(selectedMode)) {
+            frame.setLayout(new GridLayout(1, 5));
+            String[] algorithms = {"Bubble Sort", "Insertion Sort", "Selection Sort", "Merge Sort", "Quick Sort"};
+            List<SortingVisualizer> panels = new ArrayList<>();
+            for (String algo : algorithms) {
+                SortingVisualizer panel = new SortingVisualizer(algo, array.clone());
+                panels.add(panel);
+                frame.add(panel);
+                panel.startSorting(frame, true);
+            }
+        
+            new Thread(() -> {
+                for (SortingVisualizer panel : panels) {
+                    while (panel.getSortDuration() == 0) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                         }
                     }
-
-                    // Sort the panels by duration and display leaderboard
-                    panels.sort(Comparator.comparingLong(SortingVisualizer::getSortDuration));
-                    StringBuilder leaderboard = new StringBuilder("Leaderboard:\n");
-                    for (int i = 0; i < panels.size(); i++) {
-                        leaderboard.append((i + 1)).append(". ").append(panels.get(i).algorithm)
-                                .append(" - ").append(panels.get(i).getSortDuration() / 1_000_000).append(" ms\n");
-                    }
+                }
+        
+                panels.sort(Comparator.comparingLong(SortingVisualizer::getSortDuration));
+                StringBuilder leaderboard = new StringBuilder("Leaderboard:\n");
+                for (int i = 0; i < panels.size(); i++) {
+                    leaderboard.append((i + 1)).append(". ").append(panels.get(i).algorithm)
+                            .append(" - ").append(panels.get(i).getSortDuration() / 1_000_000).append(" ms\n");
+                }
+        
+                
+                SwingUtilities.invokeLater(() -> {
                     JOptionPane.showMessageDialog(frame, leaderboard.toString(), "Race Results", JOptionPane.INFORMATION_MESSAGE);
-                }).start();
-            }
-
-            frame.setVisible(true);
-        });
-    }
-
-    private static int[] generateRandomArray(int size) {
-        int[] array = new int[size];
-        Random random = new Random();
-        for (int i = 0; i < size; i++) {
-            array[i] = random.nextInt(100) + 1;
+        
+                    
+                    askToRestart(frame);
+                });
+            }).start();
         }
-        return array;
+        
+
+        frame.setVisible(true);
+    });
+}
+
+private static void askToRestart(JFrame frame) {
+    int response = JOptionPane.showConfirmDialog(frame, "Would you like to run the program again?", "Restart Program", JOptionPane.YES_NO_OPTION);
+    if (response == JOptionPane.YES_OPTION) {
+        frame.dispose();
+        runProgram();
+    } else {
+        frame.dispose();
     }
+}
+
+private static int[] generateRandomArray(int size) {
+    int[] array = new int[size];
+    Random random = new Random();
+    for (int i = 0; i < size; i++) {
+        array[i] = random.nextInt(100) + 1;
+    }
+    return array;
+}
 }
